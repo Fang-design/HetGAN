@@ -12,9 +12,8 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 from layers import GraphConvolution
 from attention_layers import Attention
-from utils import *
+from utils_ import *
 from graph import *
-from parameter_ori import *
 from sklearn.metrics import r2_score
 from sklearn import preprocessing
 from sklearn.preprocessing import MinMaxScaler
@@ -24,10 +23,11 @@ from pylab import cm
 import os
 import time
 import argparse
+
 torch.manual_seed(0)
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--log_file', default='./logs/running_log.log', type=str)
+parser.add_argument('--log_file', default='./logs/grid_search.log', type=str)
 parser.add_argument('--patience', default=10, type=int)
 parser.add_argument('--seed', default=1024, type=int)
 parser.add_argument('--epoch', default=100, type=int)
@@ -35,7 +35,6 @@ parser.add_argument('--epoch', default=100, type=int)
 args = parser.parse_args()
 
 torch.manual_seed(args.seed)
-
 def init_para(model_):
     for name, param in model_.named_parameters():
         if name.find('.bias') != -1:
@@ -47,14 +46,15 @@ class lstm_reg(nn.Module):
     def __init__(self, input_size, hidden_size, output_size=1, num_layers=2,bidirection=True):
         super(lstm_reg, self).__init__()
 
-        self.rnn = nn.LSTM(input_size, hidden_size, num_layers,bidirectional=bidirection, batch_first = True) # rnn
-        self.reg = nn.Linear(hidden_size, output_size)
+        self.rnn = nn.LSTM(input_size, hidden_size, num_layers,bidirectional=bidirection, batch_first = True) 
+        self.reg = nn.Linear(hidden_size, output_size) 
 
     def forward(self, x):
         x, (hidden,c) = self.rnn(x) # (seq, batch, hidden)
         out = x
         b, s, h = x.shape
         x = torch.mean(x,dim=1)
+
         return x,hidden
     
 class Predict_Model(nn.Module):
@@ -65,16 +65,16 @@ class Predict_Model(nn.Module):
         x = self.reg(x)
         return x
 class GCN(nn.Module):
-    def __init__(self, nfeat, nhid, nclass, dropout):
-        super(GCN, self).__init__()
+    def __init__(self, nfeat, nhid, nclass, dropout):  
+        super(GCN, self).__init__()  
 
-        self.gc1 = GraphConvolution(nfeat, nhid)
-        self.gc2 = GraphConvolution(nhid, nhid * 2)
+        self.gc1 = GraphConvolution(nfeat, nhid)   
+        self.gc2 = GraphConvolution(nhid, nhid * 2)  
         self.dropout = dropout
         self.fc = nn.Linear(nhid * 2, nclass)
     def forward(self, x, adj):
-        x = F.relu(self.gc1(x, adj))
-        x = F.dropout(x, self.dropout, training=self.training)
+        x = F.relu(self.gc1(x, adj))  
+        x = F.dropout(x, self.dropout, training=self.training)  
         x = self.gc2(x, adj)
 
         x = self.fc(x)
@@ -134,7 +134,7 @@ def restruct_node(atten,out_conv,out_flow,neighbors_dict,conv_keys,flow_keys,nei
         context = context.squeeze(0)
         out_flow_[index] = context
     if mode=='eval':
-        f = open(out_path+str(attention_theta)+'_4th.txt','w')
+        f = open(out_path+str(attention_theta)+'_1th.txt','w')
         for k,v in dict_dis.items():
             f.writelines(str(k)+': '+str(v))
         f.close()
@@ -173,7 +173,9 @@ def standardscaler_conv(data_conv):
     return mean_x_conv,std_x_conv,results_conv
 
 def reverse_minmax(results_flow,max_x_flow,min_x_flow):
+    #results_flow = results_flow.reshape(439*103,1)
     final = results_flow*(max_x_flow - min_x_flow) + min_x_flow
+    #final = final.reshape(439,103)
     return final
 
 def reverse_standard(results_flow,mean_x_flow,std_x_flow):
@@ -181,14 +183,13 @@ def reverse_standard(results_flow,mean_x_flow,std_x_flow):
     return final
 
 
-def single_train(flow_datasets,conv_datasets):
+def single_train(flow_datasets,conv_datasets,windows,hidden_size,learning_rate,gcn_output):
     print('start_training!')
     scaler_list_flow = []
     scaler_list_conv = []
     data_flow, adj_flow, flow_keys = flow_datasets
     
     data_conv, adj_conv, conv_keys = conv_datasets
-    #before load_data, scaler data......
     flow_mean_x,flow_std_x,data_flow = standardscaler_flow(data_flow)
     conv_mean_x,conv_std_x,data_conv = standardscaler_conv(data_conv)
 
@@ -202,12 +203,12 @@ def single_train(flow_datasets,conv_datasets):
     neighbors_info = load_neighbor('neighbors.txt')
     neighbors_dis = load_nei_dis('neighbors_distance.txt')
 
-    node_number_flow,window_seq_len_flow_trian,final_data_x_flow_train, final_data_y_flow_train = load_datasets(data_flow_train,data_type='flow')
+    node_number_flow,window_seq_len_flow_trian,final_data_x_flow_train, final_data_y_flow_train = load_datasets(data_flow_train,windows,embeding_size,data_type='flow')
     node_number_flow, window_seq_len_flow_test, final_data_x_flow_test, final_data_y_flow_test = load_datasets(
-        data_flow_test,data_type='flow')
+        data_flow_test,windows,embeding_size,data_type='flow')
     final_data_y_flow_test = final_data_y_flow_test.view(final_data_y_flow_test.shape[1],final_data_y_flow_test.shape[0])
-    node_number_conv, window_seq_len_conv_train, final_data_x_conv_train, final_data_y_conv_train = load_datasets(data_conv_train,data_type='conv')
-    node_number_conv, window_seq_len_conv_test, final_data_x_conv_test, final_data_y_conv_test = load_datasets(data_conv_test,data_type='conv')
+    node_number_conv, window_seq_len_conv_train, final_data_x_conv_train, final_data_y_conv_train = load_datasets(data_conv_train,windows,embeding_size,data_type='conv')
+    node_number_conv, window_seq_len_conv_test, final_data_x_conv_test, final_data_y_conv_test = load_datasets(data_conv_test,windows,embeding_size,data_type='conv')
     net = lstm_reg(input_size=embeding_size, hidden_size=hidden_size,bidirection=bidirection)
     net_conv = lstm_reg(input_size=embeding_size,hidden_size=hidden_size,bidirection=bidirection)
     gcn_model_output = GCN(nfeat=windows,
@@ -226,13 +227,15 @@ def single_train(flow_datasets,conv_datasets):
                            dropout=0.1)
     atten = Attention(enc_hid_dim=gcn_output, dec_hid_dim=gcn_output)
     criterion = nn.MSELoss()
-    Predict_reg = Predict_Model(gcn_output+hidden_size *2,1)
+    Predict_reg = Predict_Model(gcn_output+hidden_size*2,1)
     init_para(net)
     init_para(net_conv)
     init_para(gcn_model_output)
     init_para(gcn_model_output_conv)  
     init_para(atten)
     init_para(Predict_reg)
+    
+    
     parameters = list(net.parameters()) + list(net_conv.parameters()) + list(
         gcn_model_output.parameters()) + list(
         gcn_model_output_conv.parameters())+list(Predict_reg.parameters())+list(atten.parameters())
@@ -245,8 +248,8 @@ def single_train(flow_datasets,conv_datasets):
     gcn_model_output_conv.train()
     Predict_reg.train()
     atten.train()
+    patience = args.patience
     mape_previous = np.inf
-    patience = 10
     patience_count = 0
     stt_ = time.time()
     for e in range(epoch):
@@ -280,6 +283,7 @@ def single_train(flow_datasets,conv_datasets):
                 adj_data_conv = normalize(adj_data_conv)
                 adj_data_conv = get_laplacian(adj_data_conv)
 
+
             out,_ = net(var_x_flow)
             out_conv,_ = net_conv(var_x_conv)
             gcn_out = gcn_model_output(var_x_flow.squeeze(2),adj_data_flow)
@@ -289,13 +293,11 @@ def single_train(flow_datasets,conv_datasets):
             out = Predict_reg(result)
             out = out.squeeze(1)
             loss = criterion(out, var_y_flow)
-            # 反向传播
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
             loss_list.append(loss.item())
             total_batch += 1
-
         pred_flow = []
         scores = []
         output_stations = [42428714,42748139,5328215082,42440721,1372888590,42870679]
@@ -323,7 +325,6 @@ def single_train(flow_datasets,conv_datasets):
             out = Predict_reg(result)
             pred_flow.append(out)
         pred_flow = torch.stack(pred_flow)
-        #pred_flow = pred_flow.t()
         pred_flow = pred_flow.squeeze(2)
         pred_flow = pred_flow.view(pred_flow.size(1),pred_flow.size(0))
         final_data_y_flow_test_ = reverse_standard(final_data_y_flow_test,flow_mean_x,flow_std_x)
@@ -339,40 +340,50 @@ def single_train(flow_datasets,conv_datasets):
         else:
             mape_previous = mape_current
             patience_count = 0
-            print('MAPE:{}'.format(mape_previous))
-            np.save('pred_flow_value_4th'+'.npy',pred_flow.cpu().data.numpy())
-            np.save('final_data_y_flow_test_4th'+'.npy',final_data_y_flow_test_.cpu().data.numpy())
 
-            with open('image/result_all_test_4th'  + '.txt', 'w') as f:
-                f.writelines('r2_score:{}'.format(r2_score(final_data_y_flow_test_.cpu().data.numpy(), pred_flow.cpu().data.numpy())))
-                f.writelines('\n')
-                f.writelines('mape:{}'.format(mape_previous))
-                f.writelines('\n')
-                f.writelines('rmse_score:{}'.format(math.sqrt(mean_squared_error(final_data_y_flow_test_.cpu().data.numpy(),pred_flow.cpu().data.numpy())))
-
-            for i in range(len(output_stations)):
-                output_station = output_stations[i]
-                output_index = flow_keys.index(output_station)
-                pred_flow_value = pred_flow[output_index,:].cpu().data.numpy()
-                truth_flow_value = final_data_y_flow_test_[output_index,:].cpu().data.numpy()
-                np.save('pred_flow_value'+str(output_station)+'_new.npy',pred_flow[output_index,:].cpu().data.numpy())
-                np.save('truth_flow_value'+str(output_station)+'_new.npy',final_data_y_flow_test_[output_index,:].cpu().data.numpy())
-
-                with open('image/result_test_4th'+str(output_station)+'.txt','w') as f:
-                    f.writelines('r2_score:{}'.format(r2_score(truth_flow_value, pred_flow_value)))
-                    f.writelines('mape:{}'.format(mape(truth_flow_value, pred_flow_value)))
-                    f.writelines('rmse_score:{}'.format(math.sqrt(mean_squared_error(truth_flow_value,pred_flow_value))))
-
-
-
+    return mape_previous
 
 def mape(y_true, y_pred):
     return np.mean(np.abs((y_pred - y_true) / y_true)) * 100
 
 
+embeding_size = 1 
+num_class = 1  
+epoch = args.epoch
+cuda = True
+bidirection = True
+attention_theta = 0.001
+
 if __name__ =='__main__':
+
     data_conv,adj_conv,conv_keys = get_data("coronavirus")
     data_flow,adj_flow,flow_keys = get_data("flow")
     flow_datasets = (data_flow,adj_flow,flow_keys)
     conv_datasets = (data_conv,adj_conv,conv_keys)
-    single_train(flow_datasets=flow_datasets,conv_datasets=conv_datasets)
+    best_err = np.inf
+    stt = time.time()
+    log_file = args.log_file 
+    for windows in [3,7,14]:
+        for hidden_size in [6,12,24]:
+            for learning_rate in [1e-2,1e-3,1e-4]:
+                for gcn_output in [6,12,24]:
+                    windows = windows
+                    hidden_size = hidden_size
+                    learning_rate = learning_rate
+                    gcn_output = gcn_output
+                    err = single_train(flow_datasets=flow_datasets,conv_datasets=conv_datasets,windows = windows,hidden_size = hidden_size,learning_rate = learning_rate,gcn_output = gcn_output)
+                    if err < best_err:
+                        best_err = err
+                        best_para_list = [windows, hidden_size, learning_rate, gcn_output]
+                    output1 = 'windows:{}, hidden_size:{}, learning_rate:{}, gcn_output:{} completed! Time cost: {}'.format(windows, hidden_size, learning_rate, gcn_output, time.time() - stt)
+                    print(output1)
+                    output2 = 'Currrent Best MAPE: {}, parameter set: {}'.format(best_err, best_para_list)
+                    print(output2)
+                    with open(log_file,'a') as fw:
+                        fw.write(output1)
+                        fw.write('\n')
+                        fw.write(output2)
+                        fw.write('\n')
+                    print('-'*50)
+                    stt = time.time()
+    print(best_para_list)

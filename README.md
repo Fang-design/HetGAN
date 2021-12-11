@@ -19,7 +19,18 @@
 
 ## How to Run?
 
+- Single run:
+
 ```bash
+cd Experiments/
 python main.py --epoch 200 --seed 1230 --log_file='./logs/running_log.log'
 ```
 
+- Grid Search:
+
+  ```bash
+  cd Experiments/
+  python grid_search.py --epoch 200 --seed 1230 --log_file='./logs/grid_search.log'
+  ```
+
+  

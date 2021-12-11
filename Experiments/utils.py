@@ -21,7 +21,7 @@ def load_neighbor(path):
 def get_data(dataset):
     if dataset == 'coronavirus':
         data_frame = pd.read_csv('../Datasets/results_no_neg_modified_final.csv', index_col=None)
-        adj_data = pd.read_csv('ZIP_code_connectivity.csv', index_col=None)
+        adj_data = pd.read_csv('../Datasets/ZIP_code_connectivity.csv', index_col=None)
 
         adj_list = adj_data.values.tolist()
         adj_dict = {int(x[0]):x[1:] for x in adj_list}
@@ -31,7 +31,7 @@ def get_data(dataset):
         data_frame = pd.read_csv('../Datasets/results_vertified_day_new.csv',index_col=None)
         #data_frame = filter_data(data_frame)
         data_list = data_frame.drop(['Unnamed: 0'],axis=1)
-        adj_data = pd.read_csv('station_distance.csv',index_col=None)
+        adj_data = pd.read_csv('../Datasets/station_distance.csv',index_col=None)
         # adj_data = adj_data.drop(['Unnamed: 0'],axis=1)
 
         adj_list = adj_data.values.tolist()
