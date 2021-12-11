@@ -15,7 +15,7 @@
 
 ## Model Framework
 
-![](./images/New11.pdf)
+![](./images/Framework.png)
 
 ## How to Run?
 
