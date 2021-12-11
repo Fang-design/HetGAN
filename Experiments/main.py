@@ -27,7 +27,7 @@ import argparse
 torch.manual_seed(0)
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--log_file', default='./logs/running_log.log', type=str)
+parser.add_argument('--log_file', default='./logs/grid_search.log', type=str)
 parser.add_argument('--patience', default=10, type=int)
 parser.add_argument('--seed', default=1024, type=int)
 parser.add_argument('--epoch', default=100, type=int)
@@ -134,7 +134,7 @@ def restruct_node(atten,out_conv,out_flow,neighbors_dict,conv_keys,flow_keys,nei
         context = context.squeeze(0)
         out_flow_[index] = context
     if mode=='eval':
-        f = open(out_path+str(attention_theta)+'_4th.txt','w')
+        f = open(out_path+str(attention_theta)+'.txt','w')
         for k,v in dict_dis.items():
             f.writelines(str(k)+': '+str(v))
         f.close()
@@ -340,10 +340,10 @@ def single_train(flow_datasets,conv_datasets):
             mape_previous = mape_current
             patience_count = 0
             print('MAPE:{}'.format(mape_previous))
-            np.save('pred_flow_value_4th'+'.npy',pred_flow.cpu().data.numpy())
-            np.save('final_data_y_flow_test_4th'+'.npy',final_data_y_flow_test_.cpu().data.numpy())
+            np.save('pred_flow_value'+'.npy',pred_flow.cpu().data.numpy())
+            np.save('final_data_y_flow_test'+'.npy',final_data_y_flow_test_.cpu().data.numpy())
 
-            with open('image/result_all_test_4th'  + '.txt', 'w') as f:
+            with open('image/result_all_test'  + '.txt', 'w') as f:
                 f.writelines('r2_score:{}'.format(r2_score(final_data_y_flow_test_.cpu().data.numpy(), pred_flow.cpu().data.numpy())))
                 f.writelines('\n')
                 f.writelines('mape:{}'.format(mape_previous))
@@ -355,10 +355,10 @@ def single_train(flow_datasets,conv_datasets):
                 output_index = flow_keys.index(output_station)
                 pred_flow_value = pred_flow[output_index,:].cpu().data.numpy()
                 truth_flow_value = final_data_y_flow_test_[output_index,:].cpu().data.numpy()
-                np.save('pred_flow_value'+str(output_station)+'_new.npy',pred_flow[output_index,:].cpu().data.numpy())
-                np.save('truth_flow_value'+str(output_station)+'_new.npy',final_data_y_flow_test_[output_index,:].cpu().data.numpy())
+                np.save('pred_flow_value'+str(output_station)+'.npy',pred_flow[output_index,:].cpu().data.numpy())
+                np.save('truth_flow_value'+str(output_station)+'.npy',final_data_y_flow_test_[output_index,:].cpu().data.numpy())
 
-                with open('image/result_test_4th'+str(output_station)+'.txt','w') as f:
+                with open('image/result_test'+str(output_station)+'.txt','w') as f:
                     f.writelines('r2_score:{}'.format(r2_score(truth_flow_value, pred_flow_value)))
                     f.writelines('mape:{}'.format(mape(truth_flow_value, pred_flow_value)))
                     f.writelines('rmse_score:{}'.format(math.sqrt(mean_squared_error(truth_flow_value,pred_flow_value))))

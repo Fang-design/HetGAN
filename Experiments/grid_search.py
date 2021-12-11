@@ -134,7 +134,7 @@ def restruct_node(atten,out_conv,out_flow,neighbors_dict,conv_keys,flow_keys,nei
         context = context.squeeze(0)
         out_flow_[index] = context
     if mode=='eval':
-        f = open(out_path+str(attention_theta)+'_1th.txt','w')
+        f = open(out_path+str(attention_theta)+'_grid_search.txt','w')
         for k,v in dict_dis.items():
             f.writelines(str(k)+': '+str(v))
         f.close()
