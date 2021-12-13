@@ -24,14 +24,10 @@ def normalization(dataset):
     dataset = dataset.reshape(-1,1)
     scalar = max_value - min_value
     dataset = list(map(lambda x: (x-min_value) / scalar, dataset))
-    #print(dataset)
     return dataset
 
 
 def get_laplacian(W):
-    # A = A + I
-    # A = A + torch.eye(A.size(0))
-    # 所有节点的度
     d = W.sum(1)
     D = torch.diag(d)
     L = D - W

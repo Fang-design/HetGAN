@@ -20,19 +20,17 @@ def load_neighbor(path):
 
 def get_data(dataset):
     if dataset == 'coronavirus':
-        data_frame = pd.read_csv('../Datasets/results_no_neg_modified_final.csv', index_col=None)
-        adj_data = pd.read_csv('../Datasets/ZIP_code_connectivity.csv', index_col=None)
-
+        data_frame = pd.read_csv('results_no_neg_modified_final.csv', index_col=None)
+        adj_data = pd.read_csv('ZIP_code_connectivity.csv', index_col=None)
         adj_list = adj_data.values.tolist()
         adj_dict = {int(x[0]):x[1:] for x in adj_list}
         data_list = data_frame.values.tolist()
         data_dict = {int(x[0]):x[1:] for x in data_list}
     else:
-        data_frame = pd.read_csv('../Datasets/results_vertified_day_new.csv',index_col=None)
-        #data_frame = filter_data(data_frame)
+
+        data_frame = pd.read_csv('results_vertified_day_new.csv',index_col=None)
         data_list = data_frame.drop(['Unnamed: 0'],axis=1)
-        adj_data = pd.read_csv('../Datasets/station_distance.csv',index_col=None)
-        # adj_data = adj_data.drop(['Unnamed: 0'],axis=1)
+        adj_data = pd.read_csv('station_distance.csv',index_col=None)
 
         adj_list = adj_data.values.tolist()
         adj_dict = {int(x[0]):x[1:] for x in adj_list}
@@ -47,7 +45,6 @@ def get_data(dataset):
         assert key in data_dict
         adj.append(adj_dict[key])
         if dataset == 'flow':
-            #data_item = filter_data(data_dict[key])
             data_item = data_dict[key]
 
         else:
@@ -84,18 +81,18 @@ def load_datasets(data,data_type='flow'):
         dataset_X, dataset_Y = create_dataset(value)
         final_data_x.append(dataset_X)
         final_data_y.append(dataset_Y)
-    final_data_x = np.array(final_data_x)  # 439 * (365 - 7) * 7
-    final_data_y = np.array(final_data_y)  # 439 * (365 - 7)
+    final_data_x = np.array(final_data_x)  
+    final_data_y = np.array(final_data_y)  
     final_data_x = torch.from_numpy(final_data_x)
     final_data_y = torch.from_numpy(final_data_y)
-    node_number = final_data_x.size(0) # 439
-    window_seq_len = final_data_x.size(1) # (365 - 7)
-    final_data_x = final_data_x.unsqueeze(2)  # 439 * (365 - 7) * 1 * 7
-    final_data_y = final_data_y.unsqueeze(2)  # 439 * (365 - 7) * 1
+    node_number = final_data_x.size(0) 
+    window_seq_len = final_data_x.size(1) 
+    final_data_x = final_data_x.unsqueeze(2)  
+    final_data_y = final_data_y.unsqueeze(2)  
     final_data_y = final_data_y.to(torch.float32)
     final_data_x = final_data_x.to(torch.float32)
-    final_data_x = final_data_x.view(window_seq_len, node_number, windows, embeding_size) # (365 - 7) * 439 * 7 * 1
-    final_data_y = final_data_y.view(window_seq_len, node_number) # (365 - 7) * 439
+    final_data_x = final_data_x.view(window_seq_len, node_number, windows, embeding_size) 
+    final_data_y = final_data_y.view(window_seq_len, node_number) 
     return node_number,window_seq_len,final_data_x,final_data_y
 
 
