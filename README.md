@@ -2,7 +2,7 @@
 
 > Implementation of **Het**erogeneous **G**raph **A**ttention **N**etwork
 
-> This is the code repository of paper "Prediction of Metro Ridership During the COVID-19 Pandemic: A Deep Learning Approach Based on Heterogeneous Graph" which is submitted to Transportation Rsearch Part C: Emgerging Technologies.
+> This is the code repository of paper "Prediction of Metro Ridership During the COVID-19 Pandemic: A Deep Learning Approach Based on Heterogeneous Graph" which is submitted to IEEE Transactions on Intelligent Transportation Systems.
 
 
 
